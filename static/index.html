@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html id="app">
+  <head>
+    <meta charset=utf-8 />
+    <title>Opentact Demo</title>
+    <link href="css/font-awesome.min.css" rel="stylesheet"/>
+    <link href="css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="css/flat-ui.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet"/>
+  </head>
+  <body class="{{background}}">
+    <div class="container">
+      <component :is="content" keep-alive></component>
+    </div>
+
+    <script type="text/template" id="message">
+<div class="usermessages text-center usermessages-{{style}} {{show}}"> 
+        <small>{{message}}</small>
+      </div>
+    </script>
+
+    <script type="text/template" id="login">
+      <div class="login">
+        <div class="login-screen">
+          <h3 class="text-center">Opentact Demo</h3>
+          <message></message>
+          <div class="login-form">
+            <p class="text-muted"><small>Login with a registered account</small></p>
+            <div class="form-group">
+              <input type="text" class="form-control login-field" value="" placeholder="Enter your email" v-model="username" id="login-name">
+              <label class="login-field-icon fui-user" for="login-name"></label>
+            </div>
+            <div class="form-group">
+              <input type="password" class="form-control login-field" value="" placeholder="Password" v-model="password" id="login-pass">
+              <label class="login-field-icon fui-lock" for="login-pass"></label>
+            </div>
+            <p class="text-muted"><small>Or, login with your own identity</small></p>
+            <div class="form-group">
+              <input type="text" class="form-control login-field" value="" placeholder="Enter an identity" v-model="identity_l" id="login-identity">
+              <label class="login-field-icon fui-user" for="login-identity"></label>
+            </div>
+            <a class="btn btn-primary btn-lg btn-block" v-on:click="$r( 'submit' )">
+              <span v-bind:class="{ 'invisible' : is_ready }" class="pull-right">
+                <i class="fa fa-refresh fa-spin fa-fw"></i>
+              </span>
+              {{ label }}
+            </a>
+            <small class="text-center" style="display: block; margin-top: 10px;">
+              <a href="#" v-on:click="$r( 'register' )">Register</a>
+            </small>
+          </div>
+        </div>
+      </div>
+    </script>
+
+
+    <script type="text/template" id="register">
+<div class="login">
+        <div class="login-screen">
+          <h3 class="text-center">Opentact Demo</h3>
+          <message></message>
+          <div class="login-form">
+            <div class="form-group">
+              <input type="text" class="form-control login-field" value="" placeholder="Your first name" v-model="firstName" id="first-name">
+            </div>
+            <div class="form-group">
+              <input type="text" class="form-control login-field" value="" placeholder="Your last name" v-model="lastName" id="last-name">
+            </div>
+            <div class="form-group">
+              <input type="text" class="form-control login-field" value="" placeholder="Your email address" v-model="email" id="email">
+            </div>
+            <div class="form-group">
+              <input type="password" class="form-control login-field" value="" placeholder="Your password" v-model="password" id="password">
+              <label class="login-field-icon fui-lock" for="login-pass"></label>
+            </div>
+            <a class="btn btn-primary btn-lg btn-block" v-on:click="$r( 'submit' )">
+              {{ label }}
+              <span v-bind:class="{ 'invisible' : is_ready }" class="pull-right">
+                <i class="fa fa-refresh fa-spin fa-fw"></i>
+              </span>
+              </a>
+            <small class="text-center" style="display: block; margin-top: 10px;">
+              <a href="#" v-on:click="$r( 'login' )">Back to login</a>
+            </small>
+          </div>
+        </div>
+      </div>
+    </script>
+
+
+    <script type="text/template" id="home">
+      <div class="row" style="margin-bottom: 10px; margin-top: 50px;">
+        <div class="col-md-6">
+          <message></message>
+        </div>
+        <div class="col-md-6 text-right">
+          <user keep-alive></user>
+        </div>
+      </div>
+      <div class="row">
+        <call keep-alive></call>
+      </div>
+      <div class="row">
+        <im keep-alive></im>
+      </div>
+      <div class="row">
+        <control keep-alive></control>
+      </div>
+      <div class="row">
+        <contacts keep-alive></contacts>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <div class="col-md-12 text-center">
+          <sipstatus keep-alive></sipstatus>
+          <imstatus keep-alive></imstatus>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="user">
+      <a title="Logout {{user.first}}" href="#" v-on:click="$r( 'logout' )">
+        <small class="text-muted">Logout {{user.first}}
+      </a><br/>
+      <small class="text-muted">Identity: {{user.identity}}</small>
+    </script>
+
+    <script type="text/template" id="remotevideo">
+      <video style="width: 100%; background-color: black; border-radius: 6px;" id="remoteVideo"></video>
+    </script>
+
+    <script type="text/template" id="call">
+      <div class="col-xs-12 col-md-12" v-if="!is_idle" style="margin-bottom: 10px;">
+        <div class="login-form" style="padding-bottom: 10px !important;">
+          <div class="form-group text-muted">
+            <p>
+              Call with {{displayName}}. {{status}}{{error}}
+              <span class="pull-right">
+                <a v-if="is_ended" class="btn btn-danger" href="#" v-on:click="$r( 'close' )">Close</a>
+                <a v-if="is_receiving" class="btn btn-primary" href="#" v-on:click="$r( 'accept' )">Accept</a>
+                <a v-if="is_receiving" class="btn btn-danger" href="#" v-on:click="$r( 'reject' )">Reject</a>
+                <a v-if="is_starting || is_ringing || is_started" class="btn btn-danger" href="#" v-on:click="$r( 'hangup' )">Hangup</a>
+              </span>
+            </p>
+          </div>
+          <div class="form-group" v-bind:class="{ invisible : (is_audio_only || is_ended) }">
+            <!-- <remotevideo v-for="v in videos"></remotevideo> -->
+
+            <video style="width: 100%; background-color: black; border-radius: 6px;" id="remoteVideo" autoplay></video>
+          </div>
+          <div class="form-group text-center">
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="im">
+      <div class="col-xs-12 col-md-12" v-if="!is_idle" style="margin-bottom: 10px;">
+        <div class="login-form" style="padding-bottom: 10px !important;">
+          <div class="form-group text-muted">
+            <p>
+              IM with {{displayName}}. {{status}}{{error}}
+              <span class="pull-right">
+                <a href="#" class="btn btn-danger" v-on:click="$r( 'close' )">Close</a>
+              </span>
+            </p>
+          </div>
+          <div v-if="is_started">
+            <div>
+              <im-message v-for="m in messages" track-by="id" :message="m"></im-message>
+              <div class="text-muted" style="font-size: 12px; margin-top: 10px;" v-if="typing">
+                Typing ...
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+              <input type="text" class="form-control login-field" value="" v-on:keyup="$r( 'typing' )" 
+                v-on:keyup.13="$r( 'send' )"
+                placeholder="Type in something..." v-model="message" id="login-name">
+              <label class="login-field-icon fui-chat" for="login-name"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="im-message">
+<div class="form-control login-field" v-bind:class="{ 'im-pending': is_pending }" style="margin-top: 5px;">
+          <strong>{{ message.from }}</strong> &mdash; {{ message.body }}
+          <span class="pull-right" style="display: flex;" >
+            <small class="text-muted" style="margin-right: 5px; font-size: 12px;">{{message.code}} {{message.condition}}</small>
+            <i title="{{message.code}} {{message.condition}}" class="fui-{{icon}}"></i>
+          </span>
+      </div>
+    </script>
+
+    <script type="text/template" id="control">
+      <div class="col-xs-12 col-md-12" v-bind:class="{ 'visible': is_visible, 'hidden': is_hidden } ">
+        <div class="login-form" style="padding-bottom: 10px !important;">
+          <div class="form-group">
+            <input type="text" class="form-control login-field" value="" placeholder="Please enter a username, eg: 2279131349578062" v-model="to" id="login-name">
+          </div>
+          <div class="form-group">
+            <div class="row">
+              <div class="col-xs-6 col-md-6">
+                <callstart></callstart>
+                <imstart></imstart>
+              </div>
+              <div class="col-xs-6 col-md-6 text-right">
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="contacts">
+      <div class="col-xs-12 col-md-12" v-bind:class="{ 'hidden': is_hidden } ">
+        <div class="login-form" style="padding-bottom: 10px !important;">
+            
+            <ext-number keep-alive></ext-number>
+
+            <div v-if="is_searching" class="text-muted text-center" style="margin-bottom: 10px;">
+              <small>Searching for new contacts... <i class="fa fa-refresh fa-spin fa-fw"></i> </small>
+            </div>
+
+            <div v-if="is_fetching" class="text-muted text-center" style="margin-bottom: 10px;">
+              <small>Getting existing contacts... <i class="fa fa-refresh fa-spin fa-fw"></i> </small>
+            </div>
+            
+            <div class="row" v-if="is_ready && contacts.length" style="margin-bottom: 10px;">
+              <contact v-for="c in contacts" :contact="c"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="template/template" id="contact">
+      <div class="text-center" style="line-height: 1px; margin-bottom: 20px; width: 30%; display: inline-block;">
+        <img v-bind:src="contact.avatar" style="border-radius: 50px; border: 5px solid white;"><br>
+        <small>{{ contact.first}}</small><br>
+        <small class="text-muted" style="font-size: 11px;">{{ contact.email}}</small><br>
+        <small class="text-muted" style="font-size: 11px;">{{ contact.identity}}</small><br>
+        <div class="btn-group btn-group-xs" v-if="is_following">
+          <button title="Start audio call" class="btn btn-primary btn-xs" v-on:click="$r( 'audio' )"><span class="fa fa-phone"></span></button>
+          <button title="Start video call" class="btn btn-primary btn-xs" v-on:click="$r( 'video' )"><span class="fa fa-video-camera"></span></button>
+          <button title="Start chat conversation" class="btn btn-primary btn-xs" v-on:click="$r( 'chat' )"><span class="fa fa-comment"></span></button>
+        </div>
+
+        <div class="btn-group btn-group-xs" v-if="is_follow_received">
+          <button title="Accept request" class="btn btn-default btn-xs" v-on:click="$r( 'accept' )">Accept request</button> 
+          <button title="Refuse request" class="btn btn-default btn-xs" v-on:click="$r( 'refuse' )">Decline request</button> 
+        </div>
+
+          <button class="btn btn-default btn-xs" v-if="is_not_followed" v-on:click="$r( 'follow' )">Follow</button> 
+          
+          <small class="text-muted" v-if="is_follow_sent">Request sent</small>
+      
+      </div>
+    </script>
+
+    <script type="text/template" id="ext-number">
+      <div class="input-group" style="margin-bottom: 30px;">
+        <input type="text" class="form-control login-field" value="" placeholder="Call a number, or search for new contacts" v-model="number">
+        <span class="input-group-btn">
+          <button class="btn btn-default" v-on:click="$r('call')">Call</button>
+          <button class="btn btn-default" v-on:click="$r('search')">Search</button>
+        </span>
+      </div>
+    </script>
+
+    <script type="text/template" id="imstart">
+      <a class="btn btn-primary {{status}}" href="#" v-on:click="$r( 'chat' )"><span class="fui-chat"></span> IM</a>
+    </script>
+
+    <script type="text/template" id="callstart">
+      <a class="btn btn-primary {{status}}" href="#" v-on:click="$r( 'video' )"><span class="fui-video"></span> Video</a>
+      <a class="btn btn-primary {{status}}" href="#" v-on:click="$r( 'audio' )"><span class="fui-mic"></span> Audio</a>
+    </script>
+
+    <script type="text/template" id="imstatus">
+      <span class="fa fa-comment {{status}}"></span>
+    </script>
+
+    <script type="text/template" id="sipstatus">
+      <span class="fa fa-microphone {{status}}" style="margin-right: 5px;"></span>
+      <span class="fa fa-video-camera {{status}}" style="margin-right: 5px;"></span>
+    </script>
+
+
+    <script type="text/template" id="connecting">   
+      <p class="text-center" style="margin-top: 100px;">
+        <small class="text-muted">
+          Connecting... <i class="fa fa-refresh fa-spin fa-fw"></i>
+        </small>
+      </p>
+    </script>
+
+    <script type="text/template" id="checking">
+      <p class="text-center" style="margin-top: 100px;">
+        <small class="text-muted">
+          Checking your session... <i class="fa fa-refresh fa-spin fa-fw"></i>
+        </small>
+      </p>
+    </script>
+
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/async.min.js"></script>
+    <script src="js/uuid.min.js"></script>
+    <script src="js/superagent.min.js"></script>
+    <script src="js/flat-ui.min.js"></script>
+    <script src="js/opentact.min.js"></script>
+    <script src="js/vue.js"></script>
+    <script src="js/setImmediate.min.js"></script>
+    <script src="js/vue.fsm.js"></script>
+    <script src="js/vue.fsm.std.js"></script>
+    <script src="js/vue.fsm.store.js"></script>
+    <script src="js/vue.fsm.http.js"></script>
+    <script src="js/app.js"></script>
+
+    <script type="application/javascript">
+      $(document).ready( function() {
+        Vue.$send( "app", "start" );
+      });
+    </script>
+
+  </body>
+</html>

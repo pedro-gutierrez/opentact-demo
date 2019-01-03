@@ -1,0 +1,2 @@
+CREATE TABLE users(id integer primary key autoincrement, token varchar(255) unique, email varchar(255) unique, first varchar(255), last varchar(255), password varchar(255), avatar varchar(255) unique, identity varchar(255) unique);
+CREATE TABLE contacts(id integer primary key autoincrement, user integer, contact integer, rel varchar(255), foreign key(user) references users(id), foreign key(contact) references users(id));
